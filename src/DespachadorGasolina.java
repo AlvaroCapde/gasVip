@@ -1,3 +1,4 @@
+import java.awt.*;
 import javax.swing.*;
 
 public class DespachadorGasolina extends Thread {
@@ -12,19 +13,61 @@ public class DespachadorGasolina extends Thread {
     private long gasPumpTime;
     private GasStationDashboard dashboard;
 
+    // Componentes de la ventana de estado visual
+    private JFrame statusFrame;
+    private JLabel estadoLabel;
+    private JLabel gasIconLabel;
+
     public DespachadorGasolina(int id, GasStation gasStation, int gasPumpTime, GasStationDashboard dashboard) {
         this.id = id;
         this.gasStation = gasStation;
         this.gasPumpTime = gasPumpTime * 1000L;
         this.estado = Estado.ESPERAR_CLIENTE;
         this.dashboard = dashboard;
+
+        setupStatusFrame();  // Inicializar la ventana visual
+    }
+
+    private void setupStatusFrame() {
+        // Configurar la ventana para mostrar el estado del despachador de gasolina
+        statusFrame = new JFrame("Despachador Gasolina " + id);
+        statusFrame.setSize(300, 200);
+        statusFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        statusFrame.setLocationRelativeTo(null);
+        statusFrame.setLayout(new BorderLayout());
+
+        // Título de la ventana
+        JLabel titleLabel = new JLabel("Despachador Gasolina " + id, SwingConstants.CENTER);
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
+        titleLabel.setForeground(Color.WHITE);
+        titleLabel.setOpaque(true);
+        titleLabel.setBackground(new Color(34, 139, 34)); // Verde oscuro
+        statusFrame.add(titleLabel, BorderLayout.NORTH);
+
+        // Etiqueta para mostrar el estado actual
+        estadoLabel = new JLabel("Estado: " + estado, SwingConstants.CENTER);
+        estadoLabel.setFont(new Font("Arial", Font.PLAIN, 16));
+        statusFrame.add(estadoLabel, BorderLayout.CENTER);
+
+        // Agregar el ícono del surtidor de gasolina y redimensionarlo
+        ImageIcon gasIcon = new ImageIcon("src/iconos/gas_icon.jpg");
+        Image image = gasIcon.getImage().getScaledInstance(50, 50, Image.SCALE_SMOOTH); // Redimensionar el ícono del surtidor de gasolina
+        gasIconLabel = new JLabel(new ImageIcon(image), SwingConstants.CENTER);
+        statusFrame.add(gasIconLabel, BorderLayout.SOUTH); // Colocar el ícono en la parte inferior
+
+        statusFrame.setVisible(true);
     }
 
     public void actualizarEstado(Estado nuevoEstado) {
         Estado estadoAnterior = this.estado;
         this.estado = nuevoEstado;
 
-        // Actualizar el dashboard
+        // Actualizar la ventana de estado visual
+        SwingUtilities.invokeLater(() -> {
+            estadoLabel.setText("Estado: " + nuevoEstado);
+        });
+
+        // Actualizar el dashboard general
         SwingUtilities.invokeLater(() -> {
             if (estadoAnterior != null) {
                 dashboard.updateAgentState("Despachadores", estadoAnterior.name(), -1);

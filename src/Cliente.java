@@ -1,5 +1,5 @@
-import javax.swing.*;
 import java.awt.*;
+import javax.swing.*;
 
 public class Cliente extends Thread {
 
@@ -15,13 +15,13 @@ public class Cliente extends Thread {
     private JFrame frame;
     private JLabel estadoLabel;
     private JLabel objetivoIconLabel;
+    private JLabel carIconLabel;
     private GasStationDashboard dashboard;
-    private boolean enEsperaDeFacturacion = false; // Controla si ya está en la cola
+    private boolean enEsperaDeFacturacion = false;
 
     private long billingTime = 1000;
 
-
-    public Cliente(int id, GasStation gasStation,GasStationDashboard dashboard) {
+    public Cliente(int id, GasStation gasStation, GasStationDashboard dashboard) {
         this.id = id;
         this.gasStation = gasStation;
         this.estado = Estado.LLEGADA;
@@ -35,7 +35,7 @@ public class Cliente extends Thread {
 
     private void crearVentana() {
         frame = new JFrame("Cliente " + id);
-        frame.setSize(300, 250);
+        frame.setSize(300, 300); // Ajustar el tamaño para que tenga espacio para el ícono
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         frame.setLayout(new BorderLayout());
 
@@ -50,18 +50,27 @@ public class Cliente extends Thread {
         estadoLabel.setFont(new Font("Arial", Font.PLAIN, 16));
         frame.add(estadoLabel, BorderLayout.CENTER);
 
-        // Mostrar objetivo con íconos
+        // Mostrar objetivo con íconos redimensionados
         objetivoIconLabel = new JLabel("", SwingConstants.CENTER);
         objetivoIconLabel.setFont(new Font("Arial", Font.PLAIN, 16));
-        frame.add(objetivoIconLabel, BorderLayout.SOUTH);
-
         if (quiereGasolina) {
             objetivoIconLabel.setText("Objetivo: Gasolina");
-            objetivoIconLabel.setIcon(new ImageIcon("gas_icon.jpg")); // Coloca el path correcto del icono
+            ImageIcon gasIcon = new ImageIcon("src/iconos/gas_icon.jpg");
+            Image gasImage = gasIcon.getImage().getScaledInstance(50, 50, Image.SCALE_SMOOTH); // Redimensionar el ícono
+            objetivoIconLabel.setIcon(new ImageIcon(gasImage));
         } else if (quiereAceite) {
             objetivoIconLabel.setText("Objetivo: Aceite");
-            objetivoIconLabel.setIcon(new ImageIcon("oil_icon.png")); // Coloca el path correcto del icono
+            ImageIcon oilIcon = new ImageIcon("src/iconos/oil_icon.png");
+            Image oilImage = oilIcon.getImage().getScaledInstance(50, 50, Image.SCALE_SMOOTH); // Redimensionar el ícono
+            objetivoIconLabel.setIcon(new ImageIcon(oilImage));
         }
+        frame.add(objetivoIconLabel, BorderLayout.SOUTH);
+
+        // Agregar el ícono del coche y redimensionarlo
+        ImageIcon carIcon = new ImageIcon("src/iconos/coche_icon.png");
+        Image carImage = carIcon.getImage().getScaledInstance(60, 60, Image.SCALE_SMOOTH); // Redimensionar el ícono del coche
+        carIconLabel = new JLabel(new ImageIcon(carImage), SwingConstants.CENTER);
+        frame.add(carIconLabel, BorderLayout.EAST); // Colocar el ícono en el lado derecho
 
         frame.setVisible(true);
     }
@@ -121,7 +130,6 @@ public class Cliente extends Thread {
                         System.out.println("Cliente " + id + " está esperando un facturador.");
                         break;
 
-
                     case PAGANDO:
                         System.out.println("Cliente " + id + " está pagando.");
                         Thread.sleep(billingTime);
@@ -143,10 +151,9 @@ public class Cliente extends Thread {
     }
 
     public void finalizarFacturacion(long billingTime) {
-            System.out.println("Cliente " + id + " - Facturación completada, cambiando a PAGANDO.");
-            this.billingTime = billingTime;
-            actualizarEstado(Estado.PAGANDO);
-
+        System.out.println("Cliente " + id + " - Facturación completada, cambiando a PAGANDO.");
+        this.billingTime = billingTime;
+        actualizarEstado(Estado.PAGANDO);
     }
 
     private void verificarGasolina() throws InterruptedException {

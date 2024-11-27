@@ -1,6 +1,6 @@
-import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import javax.swing.*;
 
 public class GasStationConfigWindow extends JFrame {
     private JTextField clientsField;
@@ -34,6 +34,62 @@ public class GasStationConfigWindow extends JFrame {
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
 
+        // Crear el menú inicial
+        createInitialMenu();
+    }
+
+    private void createInitialMenu() {
+        JFrame initialMenu = new JFrame("Fundamentos de Programación en Paralelo - Proyecto Final");
+        ImageIcon upLogoIcon = new ImageIcon("src/iconos/up_Logo.jpg");
+
+        initialMenu.setSize(400, 600);
+        initialMenu.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        initialMenu.setLocationRelativeTo(null);
+        initialMenu.setLayout(new BorderLayout());
+
+        // Mostrar logo de la universidad
+        JLabel logoLabel = new JLabel(upLogoIcon);
+        logoLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        initialMenu.add(logoLabel, BorderLayout.NORTH);
+
+        // Información del proyecto
+        String infoText = "<html>"
+                + "<h2>Materia: Fundamentos de Programación en Paralelo</h2>"
+                + "<p>Profesor: Dr. Juan Carlos López Pimentel</p>"
+                + "<p>Estudiantes:</p>"
+                + "<ul>"
+                + "<p>Sophia Alessandra Frias Piña (0230148@up.edu.mx)</p>"
+                + "<p>Mario Alejandro Rodríguez González (0235810@up.edu.mx)</p>"
+                + "<p>Alvaro Capdevila Ponce de León (0234900@up.edu.mx)</p>"
+                + "</ul>"
+                + "<p>Carrera: Ingeniería en sistemas y gráficos computacionales</p>"
+                + "<p>Fecha de entrega: 26 de noviembre de 2024</p>"
+                + "</html>";
+        JLabel infoLabel = new JLabel(infoText, SwingConstants.CENTER);
+        infoLabel.setFont(new Font("Arial", Font.PLAIN, 16));
+        initialMenu.add(infoLabel, BorderLayout.CENTER);
+
+        // Botón para iniciar la configuración
+        JButton startButton = new JButton("Iniciar Simulación");
+        startButton.setBackground(new Color(34, 139, 34));
+        startButton.setForeground(Color.WHITE);
+        startButton.setFont(new Font("Arial", Font.BOLD, 18));
+        startButton.setFocusPainted(false);
+        startButton.setOpaque(true);
+        startButton.setBorderPainted(false);
+        startButton.addActionListener((ActionEvent e) -> {
+            initialMenu.dispose(); // Cerrar el menú inicial
+            showConfigWindow(); // Mostrar la ventana de configuración
+        });
+
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.add(startButton);
+        initialMenu.add(buttonPanel, BorderLayout.SOUTH);
+
+        initialMenu.setVisible(true);
+    }
+
+    private void showConfigWindow() {
         // Título
         JLabel titleLabel = new JLabel("Gasolinerías VIP Configuración", SwingConstants.CENTER);
         titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
@@ -86,6 +142,8 @@ public class GasStationConfigWindow extends JFrame {
         buttonPanel.add(cancelButton);
 
         add(buttonPanel, BorderLayout.SOUTH);
+
+        setVisible(true);
     }
 
     private JTextField createLabeledField(JPanel panel, String labelText) {
@@ -167,4 +225,7 @@ public class GasStationConfigWindow extends JFrame {
         return billingTime;
     }
 
+    public static void main(String[] args) {
+        new GasStationConfigWindow();
+    }
 }
