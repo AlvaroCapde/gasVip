@@ -1,3 +1,5 @@
+import javax.swing.*;
+
 public class DespachadorGasolina extends Thread {
 
     public enum Estado {
@@ -7,16 +9,28 @@ public class DespachadorGasolina extends Thread {
     private int id;
     private Estado estado;
     private GasStation gasStation;
+    private long gasPumpTime;
+    private GasStationDashboard dashboard;
 
-    public DespachadorGasolina(int id, GasStation gasStation) {
+    public DespachadorGasolina(int id, GasStation gasStation, int gasPumpTime, GasStationDashboard dashboard) {
         this.id = id;
         this.gasStation = gasStation;
+        this.gasPumpTime = gasPumpTime * 1000L;
         this.estado = Estado.ESPERAR_CLIENTE;
+        this.dashboard = dashboard;
     }
 
-    private void actualizarEstado(Estado nuevoEstado) {
+    public void actualizarEstado(Estado nuevoEstado) {
+        Estado estadoAnterior = this.estado;
         this.estado = nuevoEstado;
-        System.out.println("Despachador Gasolina " + id + " - Estado: " + estado);
+
+        // Actualizar el dashboard
+        SwingUtilities.invokeLater(() -> {
+            if (estadoAnterior != null) {
+                dashboard.updateAgentState("Despachadores", estadoAnterior.name(), -1);
+            }
+            dashboard.updateAgentState("Despachadores", nuevoEstado.name(), 1);
+        });
     }
 
     @Override
@@ -40,11 +54,14 @@ public class DespachadorGasolina extends Thread {
     }
 
     private void atenderCliente(Cliente cliente) throws InterruptedException {
+        dashboard.updateCriticalZone("GasPump", 1); // Incrementar zona crítica
+
         actualizarEstado(Estado.CARGANDO_GASOLINA);
-        cliente.actualizarUIDuranteCarga("Cargando gasolina...");
+        cliente.actualizarUIDuranteCarga();
         System.out.println("Despachador Gasolina " + id + " está cargando gasolina para Cliente " + cliente.getId());
-        Thread.sleep(2000); // Simular tiempo de carga
+        Thread.sleep(gasPumpTime); // Simular tiempo de carga
         gasStation.releaseGasPump(); // Liberar la bomba
+        dashboard.updateCriticalZone("GasPump", -1); // Reducir zona crítica
         System.out.println("Despachador Gasolina " + id + " ha terminado de cargar para Cliente " + cliente.getId());
         cliente.finalizarCarga(); // Notificar al cliente que el servicio ha terminado
     }

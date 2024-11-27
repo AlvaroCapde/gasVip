@@ -15,11 +15,17 @@ public class Cliente extends Thread {
     private JFrame frame;
     private JLabel estadoLabel;
     private JLabel objetivoIconLabel;
+    private GasStationDashboard dashboard;
+    private boolean enEsperaDeFacturacion = false; // Controla si ya está en la cola
 
-    public Cliente(int id, GasStation gasStation) {
+    private long billingTime = 1000;
+
+
+    public Cliente(int id, GasStation gasStation,GasStationDashboard dashboard) {
         this.id = id;
         this.gasStation = gasStation;
         this.estado = Estado.LLEGADA;
+        this.dashboard = dashboard;
 
         // Decidir si quiere gasolina o aceite (no ambos)
         this.quiereGasolina = Math.random() < 0.5;
@@ -61,16 +67,23 @@ public class Cliente extends Thread {
     }
 
     public void actualizarEstado(Estado nuevoEstado) {
+        Estado estadoAnterior = this.estado; // Guardar el estado anterior
         this.estado = nuevoEstado;
-        SwingUtilities.invokeLater(() -> estadoLabel.setText("Estado: " + estado));
+
+        // Actualizar el dashboard
+        SwingUtilities.invokeLater(() -> {
+            if (estadoAnterior != null) {
+                dashboard.updateAgentState("Clientes", estadoAnterior.name(), -1); // Restar del estado anterior
+            }
+            dashboard.updateAgentState("Clientes", nuevoEstado.name(), 1); // Sumar al nuevo estado
+            estadoLabel.setText("Estado: " + nuevoEstado); // Actualizar la UI del cliente
+        });
     }
 
     @Override
     public void run() {
         try {
             while (estado != Estado.SALIR) {
-                System.out.println("ESTADO: "+ this.estado);
-
                 switch (estado) {
                     case LLEGADA:
                         actualizarEstado(Estado.LLEGADA);
@@ -100,13 +113,18 @@ public class Cliente extends Thread {
                         break;
 
                     case ESPERANDO_FACTURADOR:
-                        System.out.println("agregar espera");
-                        gasStation.agregarClienteEsperandoFacturacion(this);
+                        if (!enEsperaDeFacturacion) { // Solo agregar si no está en espera
+                            gasStation.agregarClienteEsperandoFacturacion(this); // Agregar a la cola de facturación
+                            enEsperaDeFacturacion = true; // Marcar como agregado
+                            System.out.println("Cliente " + id + " está esperando un facturador.");
+                        }
+                        System.out.println("Cliente " + id + " está esperando un facturador.");
                         break;
+
 
                     case PAGANDO:
                         System.out.println("Cliente " + id + " está pagando.");
-                        Thread.sleep(1000);
+                        Thread.sleep(billingTime);
                         actualizarEstado(Estado.SALIR); // Transición explícita a "SALIR"
                         break;
 
@@ -116,6 +134,7 @@ public class Cliente extends Thread {
                         frame.dispose();
                         break;
                 }
+                System.out.println("Cliente " + id + " - Estado actual después del switch: " + estado);
             }
         } catch (InterruptedException e) {
             actualizarEstado(Estado.SALIR);
@@ -123,8 +142,11 @@ public class Cliente extends Thread {
         }
     }
 
-    public void finalizarFacturacion() {
-        actualizarEstado(Estado.SALIR);
+    public void finalizarFacturacion(long billingTime) {
+            System.out.println("Cliente " + id + " - Facturación completada, cambiando a PAGANDO.");
+            this.billingTime = billingTime;
+            actualizarEstado(Estado.PAGANDO);
+
     }
 
     private void verificarGasolina() throws InterruptedException {
@@ -150,9 +172,8 @@ public class Cliente extends Thread {
         actualizarEstado(Estado.ESPERANDO_FACTURADOR);
     }
 
-    public void actualizarUIDuranteCarga(String mensaje) {
-        this.estado = Estado.CARGANDO;
-        SwingUtilities.invokeLater(() -> estadoLabel.setText("Estado: " + mensaje));
+    public void actualizarUIDuranteCarga() {
+        actualizarEstado(Estado.CARGANDO);
     }
 
     public long getId() {

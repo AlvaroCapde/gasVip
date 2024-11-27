@@ -1,18 +1,15 @@
 import javax.swing.*;
 import java.awt.*;
+import java.util.HashMap;
+import java.util.Map;
 
 public class GasStationDashboard extends JFrame {
 
-    // Labels para los estados de threads
-    private JLabel clientsRunnableLabel, clientsTimedWaitingLabel, clientsBlockedLabel, clientsTerminatedLabel;
-    private JLabel dispatchersRunnableLabel, dispatchersTimedWaitingLabel, dispatchersBlockedLabel, dispatchersTerminatedLabel;
-    private JLabel oilSellersRunnableLabel, oilSellersTimedWaitingLabel, oilSellersBlockedLabel, oilSellersTerminatedLabel;
-    private JLabel billersRunnableLabel, billersTimedWaitingLabel, billersBlockedLabel, billersTerminatedLabel;
+    // Estados específicos por agente
+    private final Map<String, Map<String, JLabel>> agentStateLabels;
 
-    // Buffers
+    // Buffers y Zonas Críticas
     private JLabel gasPumpBufferLabel, oilStationBufferLabel, billingStationBufferLabel;
-
-    // Zonas críticas
     private JLabel gasPumpCriticalZoneLabel, oilStationCriticalZoneLabel, billingStationCriticalZoneLabel;
 
     public GasStationDashboard() {
@@ -35,30 +32,20 @@ public class GasStationDashboard extends JFrame {
         agentsPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         agentsPanel.setBackground(new Color(245, 245, 245)); // Gris claro
 
+        agentStateLabels = new HashMap<>();
+
         // Crear las secciones para cada tipo de agente
-        agentsPanel.add(createAgentSection("Clientes", "Llegada, Manejar, Cargar, Pagar, Salir",
-                clientsRunnableLabel = new JLabel(),
-                clientsTimedWaitingLabel = new JLabel(),
-                clientsBlockedLabel = new JLabel(),
-                clientsTerminatedLabel = new JLabel()));
+        agentsPanel.add(createAgentSection("Clientes",
+                new String[]{"LLEGADA", "MANEJAR", "ESPERANDO_DISPONIBILIDAD", "ESPERANDO_DESPACHADOR", "CARGANDO", "ESPERANDO_FACTURADOR", "PAGANDO", "SALIR"}));
 
-        agentsPanel.add(createAgentSection("Despachadores", "Esperar Cliente, Cargar Gasolina",
-                dispatchersRunnableLabel = new JLabel(),
-                dispatchersTimedWaitingLabel = new JLabel(),
-                dispatchersBlockedLabel = new JLabel(),
-                dispatchersTerminatedLabel = new JLabel()));
+        agentsPanel.add(createAgentSection("Despachadores",
+                new String[]{"ESPERAR_CLIENTE", "CARGANDO_GASOLINA"}));
 
-        agentsPanel.add(createAgentSection("Vendedores de Aceite", "Esperar Cliente, Suministrar Aceite",
-                oilSellersRunnableLabel = new JLabel(),
-                oilSellersTimedWaitingLabel = new JLabel(),
-                oilSellersBlockedLabel = new JLabel(),
-                oilSellersTerminatedLabel = new JLabel()));
+        agentsPanel.add(createAgentSection("Vendedores de Aceite",
+                new String[]{"ESPERAR_CLIENTE", "SUMINISTRAR_ACEITE"}));
 
-        agentsPanel.add(createAgentSection("Facturadores", "Esperar Cliente, Procesar Factura",
-                billersRunnableLabel = new JLabel(),
-                billersTimedWaitingLabel = new JLabel(),
-                billersBlockedLabel = new JLabel(),
-                billersTerminatedLabel = new JLabel()));
+        agentsPanel.add(createAgentSection("Facturadores",
+                new String[]{"ESPERAR_CLIENTE", "FACTURANDO"}));
 
         // Panel inferior para Buffers y Zonas Críticas
         JPanel buffersAndCriticalZonesPanel = new JPanel(new GridLayout(2, 3, 10, 10));
@@ -71,50 +58,85 @@ public class GasStationDashboard extends JFrame {
         buffersAndCriticalZonesPanel.add(billingStationBufferLabel = new JLabel("Buffer Estación de Facturación: 0 clientes"));
 
         // Zonas críticas
-        buffersAndCriticalZonesPanel.add(gasPumpCriticalZoneLabel = new JLabel("Zona Crítica Bombas de Gasolina: 0 agentes"));
-        buffersAndCriticalZonesPanel.add(oilStationCriticalZoneLabel = new JLabel("Zona Crítica Estaciones de Aceite: 0 agentes"));
-        buffersAndCriticalZonesPanel.add(billingStationCriticalZoneLabel = new JLabel("Zona Crítica Estación de Facturación: 0 agentes"));
+        buffersAndCriticalZonesPanel.add(gasPumpCriticalZoneLabel = new JLabel("Zona Crítica Gas Pumps: 0 agentes"));
+        buffersAndCriticalZonesPanel.add(oilStationCriticalZoneLabel = new JLabel("Zona Crítica Oil Stations: 0 agentes"));
+        buffersAndCriticalZonesPanel.add(billingStationCriticalZoneLabel = new JLabel("Zona Crítica Billing Stations: 0 agentes"));
 
         // Agregar secciones al tablero
         add(agentsPanel, BorderLayout.CENTER);
         add(buffersAndCriticalZonesPanel, BorderLayout.SOUTH);
     }
 
-    private JPanel createAgentSection(String title, String generalStates, JLabel runnable, JLabel timedWaiting, JLabel blocked, JLabel terminated) {
+    private JPanel createAgentSection(String title, String[] agentStates) {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBorder(BorderFactory.createTitledBorder(title));
         panel.setBackground(Color.WHITE);
 
-        // Estados de threads
-        JPanel threadStatePanel = new JPanel(new GridLayout(4, 1));
-        threadStatePanel.setBorder(BorderFactory.createTitledBorder("Estados de Threads"));
-        threadStatePanel.setBackground(Color.WHITE);
+        // Estados específicos
+        JPanel agentStatePanel = new JPanel(new GridLayout(agentStates.length, 1));
+        agentStatePanel.setBorder(BorderFactory.createTitledBorder("Estados Específicos"));
+        agentStatePanel.setBackground(Color.WHITE);
 
-        threadStatePanel.add(runnable = new JLabel("Runnable: 0"));
-        threadStatePanel.add(timedWaiting = new JLabel("Timed Waiting: 0"));
-        threadStatePanel.add(blocked = new JLabel("Blocked: 0"));
-        threadStatePanel.add(terminated = new JLabel("Terminated: 0"));
+        Map<String, JLabel> stateLabels = new HashMap<>();
+        for (String state : agentStates) {
+            JLabel label = new JLabel(state + ": 0");
+            stateLabels.put(state, label);
+            agentStatePanel.add(label);
+        }
+        agentStateLabels.put(title, stateLabels);
 
-        // Estados generales
-        JPanel generalStatePanel = new JPanel(new BorderLayout());
-        generalStatePanel.setBorder(BorderFactory.createTitledBorder("Estados Agente"));
-        generalStatePanel.setBackground(Color.WHITE);
-
-        generalStatePanel.add(new JLabel("<html>" + generalStates.replace(", ", "<br>") + "</html>"), BorderLayout.CENTER);
-
-        panel.add(threadStatePanel, BorderLayout.WEST);
-        panel.add(generalStatePanel, BorderLayout.CENTER);
-
+        panel.add(agentStatePanel, BorderLayout.CENTER);
         return panel;
     }
 
-    // Métodos para actualizar los valores
-    public void updateRunnable(String agentType, int count) {
-        switch (agentType) {
-            case "Clientes" -> clientsRunnableLabel.setText("Runnable: " + count);
-            case "Despachadores" -> dispatchersRunnableLabel.setText("Runnable: " + count);
-            case "Vendedores de Aceite" -> oilSellersRunnableLabel.setText("Runnable: " + count);
-            case "Facturadores" -> billersRunnableLabel.setText("Runnable: " + count);
+    // Método para actualizar los estados específicos de los agentes
+    public synchronized void updateAgentState(String agentType, String state, int delta) {
+        Map<String, JLabel> stateLabels = agentStateLabels.get(agentType);
+        if (stateLabels != null) {
+            JLabel label = stateLabels.get(state);
+            if (label != null) {
+                String text = label.getText();
+                int currentCount = Integer.parseInt(text.split(": ")[1]);
+
+                // Validar antes de actualizar el contador
+                if (delta < 0 && currentCount <= 0) {
+                    System.out.println("Warning: Intento de reducir contador de " + state + " por debajo de 0.");
+                    return; // Evitar valores negativos
+                }
+                currentCount += delta;
+                label.setText(state + ": " + currentCount);
+            }
+        }
+    }
+
+    // Método para actualizar los buffers
+    public synchronized void updateBuffer(String bufferType, int count) {
+        switch (bufferType) {
+            case "GasPump" -> gasPumpBufferLabel.setText("Buffer Bombas de Gasolina: " + count + " clientes");
+            case "OilStation" -> oilStationBufferLabel.setText("Buffer Estaciones de Aceite: " + count + " clientes");
+            case "BillingStation" -> billingStationBufferLabel.setText("Buffer Estación de Facturación: " + count + " clientes");
+        }
+    }
+
+    // Método para actualizar las zonas críticas
+    public synchronized void updateCriticalZone(String zoneType, int delta) {
+        JLabel label = switch (zoneType) {
+            case "GasPump" -> gasPumpCriticalZoneLabel;
+            case "OilStation" -> oilStationCriticalZoneLabel;
+            case "BillingStation" -> billingStationCriticalZoneLabel;
+            default -> null;
+        };
+
+        if (label != null) {
+            String text = label.getText();
+            int currentCount = Integer.parseInt(text.replaceAll("[^0-9]", ""));
+            int newCount = currentCount + delta;
+
+            if (newCount < 0) {
+                System.out.println("Warning: Intento de reducir el contador de " + zoneType + " por debajo de 0. Operación ignorada.");
+                return;
+            }
+            label.setText(zoneType + ": " + newCount + " agentes");
         }
     }
 }

@@ -1,3 +1,5 @@
+import javax.swing.*;
+
 public class DespachadorAceite extends Thread {
 
     public enum Estado {
@@ -7,16 +9,27 @@ public class DespachadorAceite extends Thread {
     private int id;
     private Estado estado;
     private GasStation gasStation;
+    private long oilPumpTime;
+    private GasStationDashboard dashboard;
 
-    public DespachadorAceite(int id, GasStation gasStation) {
+    public DespachadorAceite(int id, GasStation gasStation, int oilPumpTime, GasStationDashboard dashboard) {
         this.id = id;
         this.gasStation = gasStation;
+        this.oilPumpTime = oilPumpTime * 1000L;
         this.estado = Estado.ESPERAR_CLIENTE;
+        this.dashboard = dashboard;
     }
 
-    private void actualizarEstado(Estado nuevoEstado) {
+    public void actualizarEstado(Estado nuevoEstado) {
+        Estado estadoAnterior = this.estado;
         this.estado = nuevoEstado;
-        System.out.println("Despachador Aceite " + id + " - Estado: " + estado);
+
+        SwingUtilities.invokeLater(() -> {
+            if (estadoAnterior != null) {
+                dashboard.updateAgentState("Vendedores de Aceite", estadoAnterior.name(), -1);
+            }
+            dashboard.updateAgentState("Vendedores de Aceite", nuevoEstado.name(), 1);
+        });
     }
 
     @Override
@@ -40,11 +53,15 @@ public class DespachadorAceite extends Thread {
     }
 
     private void atenderCliente(Cliente cliente) throws InterruptedException {
+        dashboard.updateCriticalZone("OilStation", 1); // Incrementar zona crítica
+
         actualizarEstado(Estado.SUMINISTRANDO_ACEITE);
-        cliente.actualizarUIDuranteCarga("Cargando aceite");
+        cliente.actualizarUIDuranteCarga();
         System.out.println("Despachador Aceite " + id + " está suministrando aceite para Cliente " + cliente.getId());
-        Thread.sleep(1500);
+        Thread.sleep(oilPumpTime);
         gasStation.releaseOilStation();
+        dashboard.updateCriticalZone("OilStation", -1); // Incrementar zona crítica
+
         cliente.finalizarCarga();
     }
 }
